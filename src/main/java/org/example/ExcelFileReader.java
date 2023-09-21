@@ -1,55 +1,29 @@
 package org.example;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 
-public class WeddingAnniversary {
-    public static void main(String[] args) {
-        String inputFile = "Wedding Listing.xlsx"; // Replace with the path to your Excel file
+public class ExcelFileReader {
+    private static final String DATE_FORMAT = "MM/dd/yy";
 
-        try (FileInputStream inputStream = new FileInputStream(inputFile);
+    public static void readExcelFile(String filePath) {
+        try (FileInputStream inputStream = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-            Sheet sheet = workbook.getSheetAt(0); // Assuming you want to read the first sheet
+            // Get the first sheet
+            Sheet sheet = workbook.getSheetAt(0);
 
+            // iterate through each row
             for (Row row : sheet) {
-                // Assuming specific column indices for the data
-                int noColumnIndex = 0;
-                int nameColumnIndex = 1;
-                int domColumnIndex = 2;
-                int weekNumberColumnIndex = 3;
-                int remarksColumnIndex = 4;
-
-                Cell noCell = row.getCell(noColumnIndex);
-                Cell nameCell = row.getCell(nameColumnIndex);
-                Cell domCell = row.getCell(domColumnIndex);
-                Cell weekNumberCell = row.getCell(weekNumberColumnIndex);
-                Cell remarksCell = row.getCell(remarksColumnIndex);
-
-                // Check if all cells are "N/A" or blank, and skip the row if true
-                if (areAllCellsNAOrBlank(noCell, nameCell, domCell, weekNumberCell, remarksCell)) {
-                    continue;
+                String formattedRow = formatRow(row);
+                if (formattedRow != null) {
+                    System.out.println(formattedRow);
                 }
-
-                String noValue = (noCell != null) ? String.valueOf((int) noCell.getNumericCellValue()) : "N/A";
-                String nameValue = (nameCell != null) ? nameCell.getStringCellValue() : "N/A";
-                String domValue = (domCell != null) ? formatDate(domCell.getDateCellValue()) : "N/A";
-                String weekNumberValue = (weekNumberCell != null) ? String.valueOf((int) weekNumberCell.getNumericCellValue()) : "N/A";
-                String remarksValue = (remarksCell != null) ? remarksCell.getStringCellValue() : "N/A";
-
-                String formattedRow = String.format("No: %s, name: %s, DOM: %s, weekNumber: %s, Remarks: %s",
-                        noValue, nameValue, domValue, weekNumberValue, remarksValue);
-
-                System.out.println(formattedRow);
             }
 
         } catch (IOException e) {
@@ -57,11 +31,43 @@ public class WeddingAnniversary {
         }
     }
 
+    private static String formatRow(Row row) {
+        // declare column index No, Name, DOM, WeekNumber, Remarks
+        int noColumnIndex = 0;
+        int nameColumnIndex = 1;
+        int domColumnIndex = 2;
+        int weekNumberColumnIndex = 3;
+        int remarksColumnIndex = 4;
+
+        // Extract cell value from the row
+        Cell noCell = row.getCell(noColumnIndex);
+        Cell nameCell = row.getCell(nameColumnIndex);
+        Cell domCell = row.getCell(domColumnIndex);
+        Cell weekNumberCell = row.getCell(weekNumberColumnIndex);
+        Cell remarksCell = row.getCell(remarksColumnIndex);
+
+        // Check if cells are blank or contain "N/A" if yes, return null, so it skip that row
+        if (areAllCellsNAOrBlank(noCell, nameCell, domCell, weekNumberCell, remarksCell)) {
+            return null;
+        }
+        // Extract value if noCell is not null, and convert it to a string. Otherwise, it assigns the string N/A to no value
+        String noValue = (noCell != null) ? String.valueOf((int) noCell.getNumericCellValue()) : "N/A";
+        String nameValue = (nameCell != null) ? nameCell.getStringCellValue() : "N/A";
+        String domValue = (domCell != null) ? formatDate(domCell.getDateCellValue()) : "N/A";
+        String weekNumberValue = (weekNumberCell != null) ? String.valueOf((int) weekNumberCell.getNumericCellValue()) : "N/A";
+        String remarksValue = (remarksCell != null) ? remarksCell.getStringCellValue() : "N/A";
+
+        return String.format("No: %s, name: %s, DOM: %s, weekNumber: %s, Remarks: %s",
+                noValue, nameValue, domValue, weekNumberValue, remarksValue);
+    }
+
+    // Format Date into SimpleDateFormat
     private static String formatDate(Date date) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
         return dateFormat.format(date);
     }
 
+    // Check if all the cell are blank or contain N/A. if cell contains blank or N/A return false otherwise return true
     private static boolean areAllCellsNAOrBlank(Cell... cells) {
         for (Cell cell : cells) {
             if (cell != null) {
@@ -73,54 +79,3 @@ public class WeddingAnniversary {
         return true;
     }
 }
-
-/*
-        Scanner scanner = new Scanner(System.in);
-        boolean running = true;
-
-        while (running) {
-            System.out.println("Welcome to Marriage Anniversary App");
-            System.out.println("Choose an option:");
-            System.out.println("A) Print previous week from Sunday to Saturday Marriage Anniversary");
-            System.out.println("B) Print previous week from Sunday to Saturday Marriage Anniversary");
-            System.out.println("X) Exit");
-
-            String input = scanner.nextLine().trim();
-
-            switch (input.toUpperCase()) {
-                case "A":
-                    printAllWeddingAnniversaryLists();
-                    break;
-                case "B":
-                    printPreviousWeekWeddingAnniversaryLists();
-                    break;
-                case "X":
-                    running = false;
-                    break;
-                default:
-                    System.out.println("Invalid option");
-                    break;
-            }
-        }
-        scanner.close();
-    }
-    public static void printAllWeddingAnniversaryLists(String fileName) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
-            String line;
-            int number = 1;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length >= 4) {
-                    LocalDate date = LocalDate.parse(parts[2], DateTimeFormatter.ofPattern(DATE_FORMAT));
-                    number++;
-                    String name = parts[1];
-                    int weekNumber = Integer.parseInt(parts[3]);
-                    weddingDates.add(new WeddingDate(number, name, date, weekNumber));
-                }
-            }
-        } catch (IOException | DateTimeParseException e) {
-            System.out.println("Error loading birthday data: " + e.getMessage());
-        }
-    }
-}
-*/
